@@ -1,0 +1,355 @@
+      ..
+x .d88"                              s     .uef^"
+ 5888R   .d``                       :8   :d88E
+ '888R   @8Ne.   .u        u       .88   `888E
+  888R   %8888:u@88N    us888u.   :888ooo 888E .z8k
+  888R    `888I  888..@88 "8888"-*8888888 888E~?888L
+  888R     888I  888I9888  9888   8888    888E  888E
+  888R     888I  888I9888  9888   8888    888E  888E
+  888R   uW888L  888'9888  9888   8888    888E  888E
+ .888B .'*88888Nu88P 9888  9888  .8888Lu= 888E  888E
+ ^*888% ~ '88888F`   "888*""888" ^%888*  m888N= 888>
+   "%      888 ^      ^Y"   ^Y'    'Y"    `Y"   888
+           *8E                                 J88"
+           '8>                                 @%
+            "                                :"
+
+--    lpath-0 - Path Handling Library for Lua    --
+--    Copyright (C) 2011 Gary V. Vaughan         --
+--    http://github.com/gvvaughan/lpath          --
+
+License: MIT open source license <http://www.lua.org/license.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+
+0. INTRODUCTION
+===============
+
+lpath is a tiny library for handling paths in a system neutral way in
+your Lua code.  It follows the LuaFileSystem api where there is any
+overlap, but lpath has much smaller scope; where it's sensible to write
+parts of lpath in Lua, that's what I've done
+
+Porting an application that uses lpath for all of its path handling
+to a new system is only a matter of making sure that `lpathlib.c` does
+the right thing on that system, and possibly extending it if not, so
+I've put the absolute minimum amount of code in there.
+
+This is a pre-alpha release, and I might shrink the size of the C
+parts even more where reducing the scope even more is sensible, or I
+might improve the API before the next release.
+
+
+1. INSTALLATION
+===============
+
+The installation of lpath relies on GNU Make, if you don't have it
+fetch a copy with your package manager or build and install the
+source from:
+
+    http://ftp.gnu.org/gnu/make/make-3.81.tar.gz
+
+When you're done, make sure the resulting `make` or `gmake` binary
+is in your search `PATH`.
+
+Adjust the settings at the top of `Makefile` to match your Lua 5.1
+installation, and type `make`.
+
+    $ make -s
+    CC lpathlib.o
+    LD lpath.so
+
+You can pass additional flags to the preprocessor, compiler and linker
+by setting CPPFLAGS, CFLAGS and LDFLAGS on the `make` command line.
+
+    $ make CPPFLAGS=-D_POSIX_C_SOURCE CFLAGS=-Os
+    cc -D_POSIX_C_SOURCE -I/usr/local/include -DPATH_VERSION="5.1.0" \
+      -Os -fpic -c -o lpathlib.o lpathlib.c
+    cc -Os -fpic -bundle -undefined dynamic_lookup lpathlib.o -o lpath.so
+
+If this fails to build a loadable module on your system, you will
+need to adjust `MODULES_LDFLAGS` in the Makefile and try again.  If
+you get lpath working on a new system like this, please send me a
+patch for the next release.
+
+You'll now have `lpath.so` in the build directory, which you can
+test using `make check`:
+
+    $ make check
+    Ok!
+
+You can try to invesigate any failed tests yourself in `test.lua`,
+or report a bug (with as much relevant detail as possible) so I can
+try to fix it for the next release.
+
+When the tests are `Ok!`, you can install into your Lua library
+paths using `make install`.  If you using a staging directory
+you can set DESTDIR as an additional prefix at install time:
+
+    $ make install DESTDIR=/opt/staging
+    test -d /opt/staging/usr/local/lib/lua/5.1 || \
+        install -c -d /opt/staging/usr/local/lib/lua/5.1
+    install -c lpath.so \
+        /opt/staging/usr/local/lib/lua/5.1/lpath.so
+    test -d /opt/staging/usr/local/share/lua/5.1 || \
+        install -c -d /opt/staging/usr/local/share/lua/5.1
+    install -c -m 644 path.lua \
+        /opt/staging/usr/local/share/lua/5.1/path.lua
+
+Also, you can change the location of the installation directories, if
+you prefer to give each package its own directory and use a tree of
+symbolic links to make everything visible from its final destination,
+for example:
+
+    $ make install prefix=/usr/local/packages/lpath-0
+    test -d /usr/local/packages/lpath-0/lib/lua/5.1 || \
+        install -c -d /usr/local/packages/lpath-0/lib/lua/5.1
+    install -c lpath.so \
+        /usr/local/packages/lpath-0/lib/lua/5.1/lpath.so
+    test -d /usr/local/packages/lpath-0/share/lua/5.1 || \
+        install -c -d /usr/local/packages/lpath-0/share/lua/5.1
+    install -c -m 644 path.lua \
+        /usr/local/packages/lpath-0/share/lua/5.1/path.lua
+
+There's also `make uninstall` incase you change your mind.
+
+
+2. DOCUMENTATION
+================
+
+Loading the lpath package
+-------------------------
+
+The `lpath` package does not pollute the global namespace when you require
+it, but returns an environment table containing the new calls it provides.
+You'll need to assign that to a namespace to make use of it:
+
+    os.path = require'lpath'
+
+If you only want the C module, and don't care about the higher level
+methods in Lua, you can get an even slimmer module with:
+
+    os.path = require'path'
+
+API
+---
+
+The prefixes `path` and `lpath` below refer to whether the documented
+method or field is available with just the C library (`path`) loaded
+or from the Lua part of the library (`lpath`, which automatically loads
+`path` too). When you `require` them, everything will load into what-
+ever namespace you assign the result of the `require` call to.
+
+All of the functions below will return `nil` with an error message in
+case of error.
+
+* lpath.absname (pathname)
+
+  Return PATHNAME, converted to an absolute path by prepending the
+  current working directory if necessary.
+
+* path.attributes (pathname [, attributename])
+* path.attributes (pathname (, attributename1, [...attributenameN]))
+
+  PATHNAME is a string containing the path to an existing file, and each
+  ATTRIBUTENAME can be one of the following strings:
+
+    - type
+      Request the type of the file at PATHNAME, which will be one of:
+      "file", "link", "directory", "character device", "block device",
+      "fifo", "socket" or (if the type is not recognised) "other";
+    - ino
+      The inode number of the file at PATHNAME;
+    - dev
+      The device number PATHNAME is stored on;
+    - nlink
+      The number of links to PATHNAME;
+    - uid
+      User id of PATHNAME's owner;
+    - gid
+      Group id of PATHNAME's owner;
+    - size
+      File size in bytes;
+    - atime, mtime or ctime
+      The last access time, last modification time and creation time
+      of PATHNAME.
+
+  To get the attributes for the destination of a symbolic link (as
+  opposed to the link itself), use the `readlink` function to fetch
+  the destination path first.
+
+  Return a table with keys for each ATTRIBUTENAME given, or with all
+  keys above if no ATTRIBUTENAME was given.
+
+* path.basename (pathname)
+
+  PATHNAME is a string containing a valid path.
+
+  Return the last component of PATHNAME (with trailing directory
+  separators removed) is returned.
+
+* path.cd (pathname)
+
+  PATHNAME is a string containing a relative or absolute path to an
+  existing directory, which becomes the new current directory when
+  searching for relative paths from now on.
+
+  Return the path to the working directory before the change of working
+  directory.
+
+* path.dir (pathname)
+
+  PATHNAME is a string containing a relative or absolute path to an
+  existing directory.  This function returns an iterator and a handle
+  for PATHNAME.
+
+  The iterator is suitable for use with `for` to cycle through the names
+  of each file contained in PATHNAME:
+
+    for f in os.path.dir'/tmp' do print (f) end
+
+  Note that the entries for '.' and '..' are never returned by dir in
+  a loop like this.
+
+  The handle has a metatable that allows it to be used for more precise
+  looping:
+
+    _, h = os.path.dir'.'
+    f = h:next ()
+    while f do
+      -- print only files that don't begin with a period
+      if f:match ('^%.') then f = h:next () else print (f) end
+    end
+
+  Additionally, the metatable provides a `close` method for clean
+  early exit:
+
+    _, h = os.path.dir'.'
+    f = h:next ()
+    while f do
+      -- search for any header file
+      if f:match ('^.*%.h' then h:close (); return f end
+    end
+
+* path.dirname (pathname)
+
+  PATHNAME is a string containing a valid path.
+
+  Return all but the last component of PATHNAME (with trailing directory
+  separators not considered part of initial PATHNAME) is returned.
+
+* lpath.getcwd ()
+
+  Return the absolute path to the current working directory - either
+  the directory the process was started from, or according to the most
+  recent successful `cd` call.
+
+* lpath.is_windows
+
+  This field is `true` when the current host machine is running Windows,
+  otherwise `false`.
+
+* lpath.is_abs (pathname)
+
+  Return `true` if PATHNAME is an absolute path starting at the root of
+  the filesystem (or any drive for Windows), and `false` in any other
+  case.
+
+* lpath.join (list)
+* lpath.join (component1 [, ...componentN])
+
+  Return a string representing the path components passed. If the first
+  component is not the system path separator, then a relative path will
+  be returned. Otherwise, any components that represent an absolute path
+  replace any partial path built from preceding components:
+
+    os.path.join ('a', 'b', '/c') == "/c"
+
+  All but one initial leading directory separators are also discarded.
+
+  Note that at least one absolute path must be in the component list
+  in order for an absolute path to be returned.
+
+* path.link (old, new [, symbolic])
+
+  If SYMBOLIC is not `true`, then a new hardlink to OLD is added at the
+  path NEW; if SYMBOLIC is `true`, then a new symbolic link is created
+  at NEW with OLD as its contents.
+
+  For symbolic links, be careful with relative paths, which will
+  originate from NEW when the link is created, not from the current
+  directory.
+
+* lpath.ln (old, new [, symbolic])
+
+  A wrapper for `link` above, which computes the relative path from
+  NEW to OLD when SYMBOLIC is new before calling `link`.
+
+* path.mkdir (pathname)
+
+  A new directory is created at PATHNAME, returning `true` if successful.
+
+* path.readlink (pathname)
+
+  Return the path of the destination of the link at PATHNAME.
+
+* lpath.relative (old, new)
+
+  Both OLD and NEW are taken relative to the current working directory
+  unless they are already absolute paths. Return the relative path thatr
+  would be needed to reach OLD when starting at NEW.  See `ln` above.
+
+* lpath.remover (pathname)
+
+  Remove Recursively - Providing permissions permit, remove PATHNAME and
+  all its contents from the filesystem. It's entirely possible for a
+  partial tree to be left behind to contain any single file that cannot
+  be removed successfully.
+
+* lpath.sep
+
+  This field contains the path separator character for the host machine,
+  `\` on windows and `/` everywhere else.
+
+* lpath.split (pathname)
+
+  Return a list of directory components from PATHNAME.  If PATHNAME is
+  absolute the first component will be the host's directory separator,
+  in order that the following is true:
+
+    os.path.join (os.path.split (pathname)) == pathname
+
+* lpath.touch (pathname)
+
+  Creates a new empty file at PATHNAME if none was there previously, or
+  else updates the access time, increasing `attributes(pathname, 'atime')`.
+
+
+3. FAQ
+======
+
+ 1. Why am I seeing weird error like this from `make check` on Mac OS?
+
+    lua(12409) malloc: *** error for object 0x1000ada20: pointer being freed was not allocated
+    *** set a breakpoint in malloc_error_break to debug
+
+You probably have a statically linked liblua (look for `/usr/local/lib/
+liblua.a` or similar), which triggers hard to find errors when resolving
+symbols from `lpath.so` using the static library linked into your Lua
+interpreter.
+
+For loading of modules to work correctly on Mac OS, you must build
+Lua with a shared library core, and link the interpreter against that.
+Whatever you do, don't link any other lua modules against `liblua.dylib`
+though, or you'll cause other weird runtime issues.
+
+
+4. ACKNOWLEDGEMENTS
+===================
+
+About two thirds of the C code in `lpathlib.c` is based on functions
+with similar purpose from:
+
+  - LuaFileSystem (http://keplerproject.github.com/luafilesystem/)
+  - luaposix (http://luaforge.net/projects/luaposix)
