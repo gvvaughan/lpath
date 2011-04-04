@@ -22,9 +22,9 @@
 #define path_stringify(s_) #s_
 
 #ifndef _AIX
-#  define _FILE_OFFSET_BITS 64 /* Linux, Solaris and HP-UX */
+# define _FILE_OFFSET_BITS 64 /* Linux, Solaris and HP-UX */
 #else
-#  define _LARGE_FILES 1 /* AIX */
+# define _LARGE_FILES 1 /* AIX */
 #endif
 
 #define _LARGEFILE64_SOURCE
@@ -50,31 +50,31 @@ static int
 path_doselection (lua_State *L, int i, int n, const char *const S[],
     path_Selector F, const void *data)
 {
-  	if (lua_isnone (L, i) || lua_istable (L, i))
-	    {
-		    int j;
-		    if (lua_isnone (L, i))
-			      lua_createtable (L,0,n);
-		    else
-			      lua_settop (L, i);
-		    for (j = 0; S[j] != NULL; j++)
-		      {
-			      F (L, j, data);
-			      lua_setfield (L, -2, S[j]);
-		      }
-		    return 1;
-	    }
-	  else
-	    {
-		    int k, n = lua_gettop (L);
-		    for (k = i; k <= n; k++)
-		      {
-			      int j = luaL_checkoption (L, k, NULL, S);
-			      F (L, j, data);
-			      lua_replace (L, k);
-		      }
-		    return 1+ n - i;
-	    }
+    if (lua_isnone (L, i) || lua_istable (L, i))
+      {
+        int j;
+        if (lua_isnone (L, i))
+            lua_createtable (L,0,n);
+        else
+            lua_settop (L, i);
+        for (j = 0; S[j] != NULL; j++)
+          {
+            F (L, j, data);
+            lua_setfield (L, -2, S[j]);
+          }
+        return 1;
+      }
+    else
+      {
+        int k, n = lua_gettop (L);
+        for (k = i; k <= n; k++)
+          {
+            int j = luaL_checkoption (L, k, NULL, S);
+            F (L, j, data);
+            lua_replace (L, k);
+          }
+        return 1+ n - i;
+      }
 }
 
 #define path_doselection(_L, _i, _S, _F, _d) \
@@ -110,51 +110,51 @@ path_pushresult (lua_State *L, int result, const char *info)
 
 static const char *const
 path_Sattributes[] = {
-	"ino", "dev", "nlink", "uid", "gid",
-	"size", "atime", "mtime", "ctime", "type",
-	NULL
+    "ino", "dev", "nlink", "uid", "gid",
+    "size", "atime", "mtime", "ctime", "type",
+    NULL
 };
 
 static const char *
 path_filetype (mode_t m)
 {
-	  if (S_ISREG(m)) return "file";
-  	else if (S_ISLNK(m)) return "link";
-	  else if (S_ISDIR(m)) return "directory";
-	  else if (S_ISCHR(m)) return "character device";
-	  else if (S_ISBLK(m)) return "block device";
-	  else if (S_ISFIFO(m)) return "fifo";
-	  else if (S_ISSOCK(m)) return "socket";
-	  else return "other";
+    if (S_ISREG(m)) return "file";
+    else if (S_ISLNK(m)) return "link";
+    else if (S_ISDIR(m)) return "directory";
+    else if (S_ISCHR(m)) return "character device";
+    else if (S_ISBLK(m)) return "block device";
+    else if (S_ISFIFO(m)) return "fifo";
+    else if (S_ISSOCK(m)) return "socket";
+    else return "other";
 }
 
 static void
 path_Fattributes (lua_State *L, int i, const void *data)
 {
-	  const struct stat *s=data;
-	  switch (i)
-	    {
-      	case 0: lua_pushinteger (L, s->st_ino); break;
-      	case 1: lua_pushinteger (L, s->st_dev); break;
-      	case 2: lua_pushinteger (L, s->st_nlink); break;
-      	case 3: lua_pushinteger (L, s->st_uid); break;
-      	case 4: lua_pushinteger (L, s->st_gid); break;
-      	case 5: lua_pushinteger (L, s->st_size); break;
-      	case 6: lua_pushinteger (L, s->st_atime); break;
-      	case 7: lua_pushinteger (L, s->st_mtime); break;
-      	case 8: lua_pushinteger (L, s->st_ctime); break;
-      	case 9: lua_pushstring (L, path_filetype (s->st_mode)); break;
-	    }
+    const struct stat *s=data;
+    switch (i)
+      {
+        case 0: lua_pushinteger (L, s->st_ino); break;
+        case 1: lua_pushinteger (L, s->st_dev); break;
+        case 2: lua_pushinteger (L, s->st_nlink); break;
+        case 3: lua_pushinteger (L, s->st_uid); break;
+        case 4: lua_pushinteger (L, s->st_gid); break;
+        case 5: lua_pushinteger (L, s->st_size); break;
+        case 6: lua_pushinteger (L, s->st_atime); break;
+        case 7: lua_pushinteger (L, s->st_mtime); break;
+        case 8: lua_pushinteger (L, s->st_ctime); break;
+        case 9: lua_pushstring (L, path_filetype (s->st_mode)); break;
+      }
 }
 
 static int
 Pattributes (lua_State *L)
 {
-	  struct stat s;
-	  const char *path = luaL_checkstring (L, 1);
-	  if (lstat(path,&s) == -1)
-		    return path_pusherror( L, path);
-	  return path_doselection (L, 2, path_Sattributes, path_Fattributes, &s);
+    struct stat s;
+    const char *path = luaL_checkstring (L, 1);
+    if (lstat(path,&s) == -1)
+        return path_pusherror( L, path);
+    return path_doselection (L, 2, path_Sattributes, path_Fattributes, &s);
 }
 
 
@@ -227,8 +227,8 @@ path_dir_iter (lua_State *L)
 
     while ((entry = readdir (d->dir)) != NULL)
       {
-				if (!(strcmp (".", entry->d_name) && strcmp ("..", entry->d_name)))
-						continue;
+        if (!(strcmp (".", entry->d_name) && strcmp ("..", entry->d_name)))
+            continue;
         lua_pushstring (L, entry->d_name);
         return 1;
       }
@@ -319,10 +319,10 @@ Pdirname (lua_State *L)
 static int
 Plink (lua_State *L)
 {
-  const char *oldpath = luaL_checkstring (L, 1);
-  const char *newpath = luaL_checkstring (L, 2);
-  return path_pushresult (L, 
-      (lua_toboolean (L, 3) ? symlink : link) (oldpath, newpath), NULL);
+    const char *oldpath = luaL_checkstring (L, 1);
+    const char *newpath = luaL_checkstring (L, 2);
+    return path_pushresult (L, 
+        (lua_toboolean (L, 3) ? symlink : link) (oldpath, newpath), NULL);
 }
 
 
@@ -350,7 +350,7 @@ Preadlink (lua_State *L)
     int n = readlink (path, buf, sizeof (buf));
 
     if (n < 0)
-      return path_pusherror (L, path);
+        return path_pusherror (L, path);
 
     lua_pushlstring (L, buf, n);
     return 1;
@@ -363,23 +363,23 @@ Preadlink (lua_State *L)
 
 static const struct luaL_reg
 lpathlib[] = {
-  	{ "attributes", Pattributes},
+    { "attributes", Pattributes},
     { "basename", Pbasename },
-	  { "cd", Pcd },
-	  { "dir", Pdir },
+    { "cd", Pcd },
+    { "dir", Pdir },
     { "dirname", Pdirname },
     { "link", Plink },
-	  { "mkdir", Pmkdir },
+    { "mkdir", Pmkdir },
     { "readlink", Preadlink },
-	  { NULL, NULL },
+    { NULL, NULL },
 };
 
 LUALIB_API int
 luaopen_path (lua_State *L)
 {
-	  path_create_dirmeta (L);
+    path_create_dirmeta (L);
     luaL_register( L, PATH_NAME, lpathlib);
     lua_pushliteral (L, PATH_FULL_VERSION);
     lua_setfield (L, -2, "_VERSION");
-	  return 1;
+    return 1;
 }

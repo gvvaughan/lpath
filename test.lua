@@ -2,9 +2,9 @@
 
 os.path = require'lpath'
 
-local tmp = '/tmp'
-local upper = '..'
-local OLDPWD='.'
+local tmp    = '/tmp'
+local upper  = '..'
+local OLDPWD = '.'
 
 --print (os.path._VERSION)
 
@@ -26,21 +26,21 @@ function cd (pathname)
 end
 
 function attrdir (pathname)
-	for file in os.path.dir (pathname) do
-		if file ~= '.' and file ~= '..' then
-			local f = pathname..dirsep..file
-			print ('\t=> '..f..' <=')
-			local attr = os.path.attributes (f)
-			assert (type(attr) == 'table')
-			if attr.mode == 'directory' then
-				attrdir (f)
-			else
-				for name, value in pairs(attr) do
-					print (name, value)
-				end
-			end
-		end
-	end
+  for file in os.path.dir (pathname) do
+    if file ~= '.' and file ~= '..' then
+      local f = pathname..dirsep..file
+      print ('\t=> '..f..' <=')
+      local attr = os.path.attributes (f)
+      assert (type (attr) == 'table')
+      if attr.mode == 'directory' then
+        attrdir (f)
+      else
+        for name, value in pairs (attr) do
+          print (name, value)
+        end
+      end
+    end
+  end
 end
 
 
@@ -75,16 +75,16 @@ local tmpdir = current..dirsep..'tmp_dir'
 local tmpfile = tmpdir..dirsep..'tmp_file'
 -- Test for existence of a previous file_tmp_dir
 if cd (tmpdir) then
-    -- that may have resulted from an interrupted test execution and remove it
-    assert (cd (upper), 'could not change to upper directory')
-    assert (rm (tmpfile), 'could not remove file from previous test') 
-    assert (rm (tmpdir), 'could not remove directory from previous test')
+  -- that may have resulted from an interrupted test execution and remove it
+  assert (cd (upper), 'could not change to upper directory')
+  assert (rm (tmpfile), 'could not remove file from previous test') 
+  assert (rm (tmpdir), 'could not remove directory from previous test')
 end
 -- tries to create a directory
 assert (mkdir (tmpdir), 'could not make a new directory')
 local attrib, errmsg = os.path.attributes (tmpdir)
 if not attrib then
-	error ('could not get attributes of file `'..tmpdir.."':\n"..errmsg)
+  error ('could not get attributes of file `'..tmpdir.."':\n"..errmsg)
 end
 assert (touch (tmpfile), 'could not create an empty file')
 
@@ -141,26 +141,26 @@ assert (type (stat (upper)) == 'table', "couldn't get attributes of upper direct
 -- Stressing directory iterator
 count = 0
 for i = 1, 4000 do
-	for file in os.path.dir (tmp) do
-		count = count + 1
-	end
+  for file in os.path.dir (tmp) do
+    count = 1+ count
+  end
 end
 
 -- Stressing directory iterator, explicit version
 count = 0
 for i = 1, 4000 do
-  local iter, dir = os.path.dir(tmp)
-  local file = dir:next()
+  local iter, dir = os.path.dir (tmp)
+  local file = dir:next ()
   while file do
-    count = count + 1
-    file = dir:next()
+    count = 1+ count
+    file = dir:next ()
   end
-  assert(not pcall(dir.next, dir))
+  assert (not pcall (dir.next, dir))
 end
 
 -- directory explicit close
-local iter, dir = os.path.dir(tmp)
-dir:close()
-assert(not pcall(dir.next, dir))
+local iter, dir = os.path.dir (tmp)
+dir:close ()
+assert (not pcall (dir.next, dir))
 
 print'Ok!'
