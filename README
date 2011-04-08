@@ -198,6 +198,26 @@ case of error.
   Return the path to the working directory before the change of working
   directory.
 
+* lpath.copy (old, new)
+
+  OLD must be an existing regular file, or a series of symlinks that
+  eventually lead to a regular file.  Like the Unix shell `cp` command,
+  NEW must be one of:
+
+    - path to an existing directory
+      A new copy of OLD with the same basename will be created in NEW;
+    - path to a file in an existing directory
+      NEW will be created if necessary, and its contents replaced with a
+      copy of OLD;
+    - a series of symlinks that evetually lead to one of the above
+      Symlinks are followed and not replaced, with NEW behaving as if it
+      had been named as the final destination path of the symlink(s);
+
+  NEW will be created if it is a non-existent file in an existing directory,
+  or else it will have it's contents replaced if there is an existing
+  regular file there already.  Trying to copy to other types of file is
+  not supported and will result in an error return.
+
 * path.dir (pathname)
 
   PATHNAME is a string containing a relative or absolute path to an
@@ -289,6 +309,11 @@ case of error.
 * path.mkdir (pathname)
 
   A new directory is created at PATHNAME, returning `true` if successful.
+
+* lpath.mkdirr (pathname)
+
+  A new directory is created at PATHNAME, along with any not-yet existing
+  intermediate directories required to do so.  Return `true` if successful.
 
 * path.readlink (pathname)
 

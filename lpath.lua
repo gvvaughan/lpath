@@ -126,11 +126,24 @@ function M.relative (old, new)
 end
 
 
+-- Like M.link, but calculate a relative path automatically for symlinks.
 function M.ln (old, new, symlink)
   if symlink then
     old = M.relative (old, new)
   end
   return M.link (old, new, symlink)
+end
+
+
+-- Make all directories required to create P fully.
+function M.mkdirr (p)
+  local type = M.attributes (p, 'type')
+  if type == nil then
+    M.mkdirr (M.dirname (p))
+    return M.mkdir (p)
+  elseif type ~= 'directory' then
+    return nil, p..': file exists already'
+  end
 end
 
 
@@ -151,5 +164,58 @@ function M.remover (p)
   -- initial remove attempt worked
   return true
 end
+
+
+-- Make a copy of SRC at DEST
+function M.copy (src, dest)
+  local function ftype (p)
+    return M.attributes (p, 'type')
+  end
+
+  -- recursively follow links
+  local function flink (p, seen)
+    seen = seen or {}
+
+    if seen[p] then
+      return nil, p..': symlink loop detected'
+    end
+    seen[p] = true
+
+    local t = ftype (p)
+    if t ~= 'link' then
+      return p, t
+    end
+    return flink (M.readlink (p), seen)
+  end
+
+  do
+    -- Only copy from regular files.
+    local src, type = flink (src)
+    if type ~= 'file' then
+      return nil, src..': not a regular file'
+    end
+  end
+
+  do
+    -- DEST must be an existing regular file, or a directory not
+    -- already containing such a file.
+    local finaldest, type = ftype (dest), dest
+    if type == 'directory' then
+      finaldest == M.join (finaldest, M.basename (src))
+      type = ftype (finaldest)
+    end
+    type, finaldest = flink (finaldest)
+    if type ~= nil and type ~= "file" then
+      return nil, finaldest..': file exists already'
+    end
+    dest = finaldest
+  end
+  
+  local s = assert (io.open (src, 'rb'))
+  local d = assert (io.open (dest, 'wb'))
+
+  return d:write (s:read'*a')
+end
+
 
 return M
