@@ -17,10 +17,6 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-/* Stringify CPP macro expansions */
-#define path_xstringify(s_) path_stringify(s_)
-#define path_stringify(s_) #s_
-
 #ifndef _AIX
 # define _FILE_OFFSET_BITS 64 /* Linux, Solaris and HP-UX */
 #else
@@ -47,8 +43,8 @@
 typedef void (*path_Selector) (lua_State *L, int i, const void *data);
 
 static int
-path_doselection (lua_State *L, int i, int n, const char *const S[],
-    path_Selector F, const void *data)
+path_doselection (lua_State *L, int i, int n, const char *const selection[],
+    path_Selector func, const void *data)
 {
     if (lua_isnone (L, i) || lua_istable (L, i))
       {
@@ -57,10 +53,10 @@ path_doselection (lua_State *L, int i, int n, const char *const S[],
             lua_createtable (L,0,n);
         else
             lua_settop (L, i);
-        for (j = 0; S[j] != NULL; j++)
+        for (j = 0; selection[j] != NULL; j++)
           {
-            F (L, j, data);
-            lua_setfield (L, -2, S[j]);
+            func (L, j, data);
+            lua_setfield (L, -2, selection[j]);
           }
         return 1;
       }
@@ -69,16 +65,16 @@ path_doselection (lua_State *L, int i, int n, const char *const S[],
         int k, n = lua_gettop (L);
         for (k = i; k <= n; k++)
           {
-            int j = luaL_checkoption (L, k, NULL, S);
-            F (L, j, data);
+            int j = luaL_checkoption (L, k, NULL, selection);
+            func (L, j, data);
             lua_replace (L, k);
           }
         return 1+ n - i;
       }
 }
 
-#define path_doselection(_L, _i, _S, _F, _d) \
-  (path_doselection) ((_L), (_i), sizeof(_S)/sizeof(*_S)-1, (_S), (_F), (_d))
+#define path_doselection(L, i, selection, func, data) \
+  (path_doselection) ((L), (i), sizeof(selection)/sizeof(*selection)-1, (selection), (func), (data))
 
 static int
 path_pusherror (lua_State *L, const char *info)
