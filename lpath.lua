@@ -149,7 +149,7 @@ end
 
 -- Recursively remove a directory and its contents.
 function M.remover (p)
-  if not os.remove (p) then
+  if M.attributes (p, 'type')  ~= nil and not os.remove (p) then
     -- not a file or empty directory, so delete all contents...
     for file in M.dir (p) do
       if file ~= '.' and file ~= '..' then

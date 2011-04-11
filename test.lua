@@ -129,6 +129,7 @@ assert (rm (tmpdir), 'could not remove new directory')
 assert (mkdir (os.path.join (tmpdir, 'file_tmp_dir')) == nil, 'could create a directory inside a non-existent one')
 
 -- Recursive removal.
+assert (os.path.remover ("this couldn't be an actual file"), 'could not remove non-existent file')
 assert (mkdir (tmpdir), 'could not create new directory')
 assert (touch (tmpfile), 'could not create an empty file')
 assert (os.path.remover (tmpfile), 'could not recursively remove file')
