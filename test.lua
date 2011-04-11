@@ -71,8 +71,9 @@ assert (os.path.join (os.path.split (current)) == current)
 
 -- Creating and removing directories.
 
-local tmpdir = current..dirsep..'tmp_dir'
-local tmpfile = tmpdir..dirsep..'tmp_file'
+local tmpdir = os.path.join (current, 'tmp_dir')
+local tmpsubdir = os.path.join (tmpdir, 'tmp_subdir')
+local tmpfile = os.path.join (tmpdir, 'tmp_file')
 -- Test for existence of a previous file_tmp_dir
 if cd (tmpdir) then
   -- that may have resulted from an interrupted test execution and remove it
@@ -125,7 +126,7 @@ assert (rm (symlink))
 -- Remove new file and directory
 assert (rm (tmpfile), 'could not remove new file')
 assert (rm (tmpdir), 'could not remove new directory')
-assert (mkdir (tmpdir..dirsep..'file_tmp_dir') == nil, 'could create a directory inside a non-existent one')
+assert (mkdir (os.path.join (tmpdir, 'file_tmp_dir')) == nil, 'could create a directory inside a non-existent one')
 
 -- Recursive removal.
 assert (mkdir (tmpdir), 'could not create new directory')
@@ -133,6 +134,9 @@ assert (touch (tmpfile), 'could not create an empty file')
 assert (os.path.remover (tmpfile), 'could not recursively remove file')
 assert (touch (tmpfile), 'could not create an empty file')
 assert (os.path.remover (tmpdir), 'could not recursively remove non-empty dir')
+assert (os.path.mkdirr (tmpsubdir), 'could not recursively make directory')
+assert (touch (tmpfile), 'could not create an empty file')
+assert (os.path.remover (tmpdir), 'could not recursively remove subdir tree')
 
 -- Trying to get attributes of a non-existent file
 assert (stat "this couldn't be an actual file" == nil, 'could get attributes of a non-existent file')
