@@ -201,7 +201,7 @@ function M.copy (src, dest)
     -- already containing such a file.
     local finaldest, type = ftype (dest), dest
     if type == 'directory' then
-      finaldest == M.join (finaldest, M.basename (src))
+      finaldest = M.join (finaldest, M.basename (src))
       type = ftype (finaldest)
     end
     type, finaldest = flink (finaldest)
